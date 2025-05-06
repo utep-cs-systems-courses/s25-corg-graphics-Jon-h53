@@ -1,0 +1,58 @@
+#include <msp430.h>
+#include "lcdutils.h"  // For drawing on the screen
+#include "lcdtypes.h"
+#include "game.h"
+#include "clocksTimer.h"
+
+// Define global variables
+u_char dinosaur_x = 20, dinosaur_y = 100;
+u_char obstacle_x = 160, obstacle_y = 100;
+//volatile u_int score = 0;
+//volatile u_char game_over = 0;
+
+//#define SW1 BIT3
+#define SW1 BIT3
+#define SW2 BIT4
+#define SW3 BIT5
+#define SW4 BIT6
+
+#define SWITCHES (SW1|SW2|SW3|SW4)
+// Collision Detection
+void check_collision() {
+  if (dinosaur_x + 10 > obstacle_x && dinosaur_x < obstacle_x + 10 &&
+      dinosaur_y + 20 > obstacle_y && dinosaur_y < obstacle_y + 20) {
+    game_over = 1;  // End the game
+  }
+}
+
+// Update Positions
+void update_positions() {
+  obstacle_x -= 2;  // Move obstacle left
+  if (obstacle_x < 0) {
+    obstacle_x = screenWidth;  // Reset to right edge
+    score++;  // Increment score
+  }
+}
+
+// Jump Logic
+
+void jump_dinosaur() {
+  if (P2IN & SW1) { // Button pressed
+    dinosaur_y -= 20; // Move up all at once
+    __delay_cycles(20000); // Small delay for jump effect
+    dinosaur_y += 20; // Move down
+  }
+}
+
+/*
+void jump_dinosaur() {
+  for (int i = 0; i < 20; i++) {
+    dinosaur_y -= 1;  // Move up
+    __delay_cycles(80000);  // Adjust speed
+  }
+  for (int i = 0; i < 20; i++) {
+    dinosaur_y += 1;  // Move down
+    __delay_cycles(80000);
+  }
+}
+*/

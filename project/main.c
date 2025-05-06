@@ -1,0 +1,117 @@
+
+#include <msp430.h>
+#include <stdio.h>
+#include "lcddraw.h"
+#include "clocksTimer.h"
+#include "lcdutils.h"
+#include "game.h"
+#include "sr.h"
+#include "buzzer.h"
+
+#define LED BIT6
+//#define SW1 BIT3
+#define SW1 1
+#define SW2 2
+#define SW3 4
+#define SW4 8
+
+#define SWITCHES 15  // Ensures correct bitwise operations
+// Global variables
+volatile u_int score = 0;
+volatile u_char game_over = 0;
+volatile u_char paused = 0; // New flag to indicate pause state
+char scoreStr[10];
+volatile u_char update_flag = 0;
+
+void switch_init() {
+  P2REN |= SWITCHES;      // Enable pull-up resistor
+  P2IE |= SWITCHES;       // Enable interrupt for SW1
+  P2OUT |= SWITCHES;      // Set pull-up for SW1
+  P2DIR &= ~SWITCHES;     // Set SW1 as input
+  P2IES |= SWITCHES;      // Detect falling edge (button press)
+  P2IFG &= ~SWITCHES;     // Clear any pending interrupt flags
+}
+/*
+void enableWDTInterrupts() {
+  WDTCTL = WDTPW | WDTTMSEL | WDTCNTCL | 1;  // Watchdog interval mode
+  IE1 |= WDTIE;  // Enable watchdog timer interrupt
+}
+
+void timerAUpmode() {
+  TA0CCR0 = 8192;    // Timer interval
+  TA0CCTL0 = CCIE;   // Enable Timer A interrupt
+  TACTL = TASSEL_2 + MC_1;  // SMCLK, Up mode
+}
+*/
+// Button Interrupt: Jump Dinosaur
+void __interrupt_vec(PORT2_VECTOR) Port_2() {
+  if (P2IFG & SW1) {  // SW1 Pressed?
+    P2IFG &= ~SW1;  // Clear interrupt flag
+    jump_dinosaur(); // Jump the dinosaur
+
+  }
+  if (P2IFG & SW2){
+    P2IFG &= ~SW2;
+    paused ^= 1;
+  }
+}
+
+void __interrupt_vec(WDT_VECTOR) WDT_ISR() {
+  //P1OUT ^= BIT6;  // Turn ON LED when game updates
+  update_flag = 1;
+  or_sr(0x8);
+    /*
+  if (!game_over) {
+    update_positions();  // Move obstacles
+    check_collision();   // Check for collision
+  }
+    */
+  //__delay_cycles(160000);
+  //P1OUT &= ~BIT6; // Turn OFF LED after update
+}
+
+// Timer Interrupt: Update Score Periodically
+void __interrupt_vec(TIMER0_A0_VECTOR) Timer_A() {
+  P1OUT ^= BIT6;
+  //P1OUT |= BIT6;  // Turn ON LED when score updates
+  if (!game_over) {
+    score++; // Increment score
+  }
+  //P1OUT &= ~BIT6; // Turn OFF LED after update
+}
+
+int main() {
+  configureClocks();
+  lcd_init();
+  clearScreen(COLOR_BLUE);
+  P1DIR |= BIT6;  // Set P1.6 as LED output
+  P1OUT &= ~BIT6; // Ensure LED is OFF initially
+  
+  switch_init();  // Enable button interrupts
+  enableWDTInterrupts();  // Periodic game updates
+  timerAUpmode();  // Timer-based scoring
+  or_sr(0x8);  // Enable global interrupts
+  update_flag = 1;
+  buzzer_init(); // Enable buzzer
+  buzzer_set_period(1000);
+  while (!game_over) {
+    if(!paused){//paused == 0
+      update_flag = 0;
+      update_positions();
+      check_collision();
+      clearScreen(COLOR_BLUE);
+      drawPixel(dinosaur_x, dinosaur_y, COLOR_WHITE); // Draw dinosaur
+      fillRectangle(obstacle_x, obstacle_y, 10, 20, COLOR_GREEN); // Draw obstacle
+      sprintf(scoreStr, "%u", score);
+      drawString5x7(10, 10, "Score:", COLOR_WHITE, COLOR_BLUE);
+      drawString5x7(50, 10, scoreStr, COLOR_WHITE, COLOR_BLUE);
+      //__delay_cycles(1600000);
+    }else{
+      clearScreen(COLOR_WHITE);
+      drawString5x7(40, 60, "Paused", COLOR_BLACK, COLOR_WHITE);
+      or_sr(0x10);
+    }
+  }
+  clearScreen(COLOR_RED);
+  drawString5x7(40, 60, "GAME OVER", COLOR_WHITE, COLOR_RED);
+}
