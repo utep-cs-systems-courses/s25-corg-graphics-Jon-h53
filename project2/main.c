@@ -23,7 +23,6 @@ static char switch_update_interrupt_sense();
 void wdt_c_handler();
 //control mechanics
 void wdt_c_handler(){
-  __delay_cycles(10000);
   //updateGame();
   if(gameOver){
     if(switches){
@@ -63,7 +62,7 @@ int main(){
   switch_init();
   led_init();
   buzzer_init();
-
+  
   enableWDTInterrupts();
   or_sr(0x8);
 

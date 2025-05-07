@@ -10,7 +10,8 @@
 
 //Global Variables
 u_int dinosaur_x = 20, dinosaur_y = 100;
-u_int obstacle_x = 160, obstacle_y = 100;
+int obstacle_x = 160;
+u_int obstacle_y = 100;
 u_int obstacle_width = 10, obstacle_height = 20;
 u_int dino_width = 10, dino_height = 20;
 u_int gameOver = 0;

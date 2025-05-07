@@ -8,11 +8,12 @@
 #define JUMP_VELOCITY -20
 #define FLOOR_HEIGHT 100
 #define OBSTACLE_SPEED 5
-#define SCREEN_WIDTH 160  // Ensure screen width is defined globally
+
 
 // External Global Variables
 extern u_int dinosaur_x, dinosaur_y;
-extern u_int obstacle_x, obstacle_y;
+extern int obstacle_x;
+extern u_int obstacle_y;
 extern u_int obstacle_width, obstacle_height;
 extern u_int dino_width, dino_height;
 extern u_int gameOver;
