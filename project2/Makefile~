@@ -1,0 +1,27 @@
+# makfile configuration
+CPU             	= msp430g2553
+LCDLIB = ../lcdLib
+CFLAGS          	= -mmcu=${CPU} -Os -I../h -I../lcdLib
+LDFLAGS		= -L../lib -L/opt/ti/msp430_gcc/include/
+
+#switch the compiler (for the internal make rules)
+CC              = msp430-elf-gcc
+AS              = msp430-elf-gcc -mmcu=${CPU} -c
+
+all:dino.elf
+
+#additional rules for files
+dino.elf: ${COMMON_OBJECTS} main.o input.o graphics.o game.o lcdutils.o lcddraw.o 
+	${CC} ${CFLAGS} ${LDFLAGS} -o $@ $^
+
+lcdutils.o: ../lcdLib/lcdutils.c
+	${CC} ${CFLAGS} -c -o $@ $<
+
+lcddraw.o: ../lcdLib/lcddraw.c
+	${CC} ${CFLAGS} -c -o $@ $<
+
+load: dino.elf
+	msp430loader.sh $^
+
+clean:
+	rm -f *.o *.elf *~
